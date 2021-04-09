@@ -2,6 +2,8 @@
 Use of Raspberry v3/v4 and Raspberry Camera to develop a Computer Vision system for the Robotics French National Cup.
 This project mainly uses OpenCV-contrib.
 
+The project is not yet finalised.
+
 ## Material
 - Raspberry v3
 - Raspberry camera v2.1
