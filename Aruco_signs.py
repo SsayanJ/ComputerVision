@@ -5,8 +5,8 @@ import time
 import numpy as np
 
 CENTRAL_POSITION = [1500, 2000]
-YELLOW_OFFSET = [-15, 0]
-BLUE_OFFSET = [15, 0]
+YELLOW_OFFSET = [-10, 0]
+BLUE_OFFSET = [10, 0]
 CAMERA_HEIGHT = 1200
 BALISE_HEIGHT = 510
 
@@ -37,16 +37,24 @@ map1, map2 = cv.fisheye.initUndistortRectifyMap(
 # IN/OUT points used to transform undistort image to orthonormal image (simulate view from the top)
 # Values for camera on YELLOW side:
 # TODO current values are not giving proper results
-yellow_in_points = np.float32([[269, 77],
-                               [1168, 178],
-                               [1089, 560],
-                               [159, 438]])
+# yellow_in_points = np.float32([[269, 77],
+#                                [1168, 178],
+#                                [1089, 560],
+#                                [159, 438]])
+# 
+# yellow_out_points = np.float32([[400, 800],
+#                                 [2500, 800],
+#                                 [2100, 1700],
+#                                 [600, 1700]])
+yellow_in_points = np.float32([[232, 534],
+                               [1065, 353],
+                               [1100, 43],
+                               [306, 4]])
 
-yellow_out_points = np.float32([[400, 800],
-                                [2500, 800],
-                                [2100, 1700],
-                                [600, 1700]])
-
+yellow_out_points = np.float32([[700, 1700],
+                                [2000, 1400],
+                                [2500, 500],
+                                [500, 600]])
 # Values for camera on BLUE side:
 # TODO need to be defined (currently using YELLOW values)
 blue_in_points = np.float32([[269, 77],
@@ -81,8 +89,10 @@ def setup_for_match(team_color):
 def undistort_and_project_image(fisheye_image):
     processed_img = cv.remap(
         fisheye_image, map1, map2, interpolation=cv.INTER_LINEAR, borderMode=cv.BORDER_CONSTANT)
+    cv.imwrite('undistorted_yellow/verres_undist2_28.png',processed_img)
     processed_img = cv.warpPerspective(
         processed_img, ORTHO_PROJ, (3000, 2000), flags=cv.INTER_LINEAR)
+    cv.imwrite('undistorted_yellow/verres_warp2_28.png',processed_img)
     return processed_img
 
 
@@ -196,12 +206,10 @@ if __name__ == "__main__":
 
     # SINGLE IMAGE: Load image to check for single image mode, just uncomment the next 2 paragraphs to use on single image
     img = cv.imread('Robot_signs/Full_board1.PNG')
-    img2 = cv.imread('Robot_signs/Sign_first_angle.jpg')
-    img3 = cv.imread('Robot_signs/Sign_1000G_400H.jpg')
-    img4 = cv.imread('Robot_signs/Sign_500D_1000H_bad.jpg')
-    img5 = cv.imread('Robot_signs/Sign_500D_1000H.jpg')
-    img6 = cv.imread("board_img_1.png")
+
+    img6 = cv.imread("coordinates/Blue_2000_1300.png")
     img7 = cv.imread("updated_pos/board_img_1.png")
+    img6 = cv.imread("coordinates/balise gauche jaune/verres_config2_28.png")
 
     # for i in range(1,6):
     #     curr_img = cv.imread(f"angle_selection/trait_{i}.png")
@@ -211,10 +219,12 @@ if __name__ == "__main__":
     #     cv.imwrite(f'angle_selection/undistort_trait_{i}.jpg', curr_img)
     #     cv.imwrite(f'train/result_1{i}.jpg', img2)
     #
-    curr_img = img7
+    curr_img = img6
     # cv.imshow('Result', curr_img)
     positions = return_opponent_positions(curr_img)
     print(positions)
+    proj_positions = proj_pos(positions[0][1], BALISE_HEIGHT)
+    print(proj_positions)
 
     # Code to check on a single image
     # curr_img = cv.remap(curr_img, map1, map2,
