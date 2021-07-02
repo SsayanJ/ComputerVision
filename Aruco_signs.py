@@ -148,9 +148,9 @@ def return_opponent_positions(fisheye_image, ortho_proj, opponent_ids):
 
         except KeyError:
             continue
-    cv.imshow('treated Image', scale_pic(img_with_markers))
-    cv.imwrite('out/warp_yellow.jpg', img_with_markers)
-    cv.waitKey(0)
+#     cv.imshow('treated Image', scale_pic(img_with_markers))
+#     cv.imwrite('out/warp_yellow.jpg', img_with_markers)
+#     cv.waitKey(0)
     return opp_ids_list, np.array(opponent_positions)
 
 # this function may not be needed in production except if we want to return the image for live streaming
@@ -213,39 +213,32 @@ def proj_pos(object_pos, object_h):
 def record_match(match_duration=100):
     # Define the duration (in seconds) of the video capture here
     capture_duration = match_duration
-    cap = cv.VideoCapture(0, cv.CAP_DSHOW)
-    # cap.set(cv.CAP_PROP_FRAME_WIDTH, DIM[0])
-    # cap.set(cv.CAP_PROP_FRAME_HEIGHT, DIM[1])
-    # cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
-    # cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
+#     cap = cv.VideoCapture(0, cv.CAP_DSHOW)
+    cap = cv.VideoCapture(0)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, DIM[0])
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, DIM[1])
+#     cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
+#     cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
 
     ts = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-    # w = cap.get(cv.CAP_PROP_FRAME_WIDTH)
-    # h = cap.get(cv.CAP_PROP_FRAME_HEIGHT)
-    fourcc = cv.VideoWriter_fourcc(*'mp4v')
-    video_title = f'{ts}_match.mp4'
-    out = cv.VideoWriter(video_title, fourcc, 20.0, (640, 480))
-
     # Define the codec and create VideoWriter object
-    # fourcc = cv.VideoWriter_fourcc(*'XVID')
-    # video_title = f'{ts}_match.avi'
-    # # out = cv.VideoWriter(f'{ts}_match.avi', fourcc, 20.0, DIM)
-    # out = cv.VideoWriter(video_title, fourcc, 20.0, (640, 480))
-
+    fourcc = cv.VideoWriter_fourcc(*'XVID')
+    video_title = f'videos/{ts}_match.avi'
+    out = cv.VideoWriter(video_title, fourcc, 20.0, DIM)
+    
     start_time = time.time()
     while(int(time.time() - start_time) < capture_duration):
+        
         ret, frame = cap.read()
         if ret == True:
-            # frame = cv.flip(frame,0)
-
-            # write the flipped frame
+#             cv.imshow('frame', frame)
+        # write the flipped frame
             out.write(frame)
-
-            cv.imshow('frame', frame)
             # if cv.waitKey(1) & 0xFF == ord('q'):
             #    break
         else:
             break
+        
 
     # Release everything if job is finished
     cap.release()
@@ -264,8 +257,8 @@ def girouette(fisheye_img, team_color):
                                GIROUETTE_YELLOW[0]: GIROUETTE_YELLOW[1]]
         # test_img = fisheye_img[600:700,
         #                        700:900]
-        cv.imshow('test_selection', test_img)
-        cv.waitKey(0)
+#         cv.imshow('test_selection', test_img)
+#         cv.waitKey(0)
     else:
         print('ERROR not configured')
         return "add blue coordinates"
@@ -288,8 +281,8 @@ if __name__ == "__main__":
     img6 = cv.imread("small_yellow/verres_config1_10.png")
 
     curr_img = img6
-    positions = return_opponent_positions(curr_img)
+    positions = return_opponent_positions(curr_img, ORTHO_PROJ, OPPONENT_IDS)
     print(positions)
-    if positions:
+    if len(positions[0]) > 0:
         proj_positions = proj_pos(positions[0][1], BALISE_HEIGHT)
         print(proj_positions)
