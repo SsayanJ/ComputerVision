@@ -212,25 +212,25 @@ def proj_pos(object_pos, object_h):
 
 def record_match(match_duration=100):
     # Define the duration (in seconds) of the video capture here
-    capture_duration = match_duration
+    capture_duration = int(match_duration)
 #     cap = cv.VideoCapture(0, cv.CAP_DSHOW)
     cap = cv.VideoCapture(0)
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, DIM[0])
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, DIM[1])
-#     cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
-#     cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
+    #cap.set(cv.CAP_PROP_FRAME_WIDTH, DIM[0])
+    #cap.set(cv.CAP_PROP_FRAME_HEIGHT, DIM[1])
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
 
     ts = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
     # Define the codec and create VideoWriter object
     fourcc = cv.VideoWriter_fourcc(*'XVID')
     video_title = f'videos/{ts}_match.avi'
-    out = cv.VideoWriter(video_title, fourcc, 20.0, DIM)
+    out = cv.VideoWriter(video_title, fourcc, 20.0, (640,480))
     
     start_time = time.time()
-    while(int(time.time() - start_time) < capture_duration):
+    while int(time.time() - start_time) < capture_duration:
         
         ret, frame = cap.read()
-        if ret == True:
+        if ret:
 #             cv.imshow('frame', frame)
         # write the flipped frame
             out.write(frame)

@@ -6,17 +6,23 @@ from cellaserv.proxy import CellaservProxy
 class Vision(Service):
 
     def __init__(self):
+        super().__init__()
         self.ortho_proj = None
-    #     self.opponent_ids = None
+        self.opponent_ids = None
     #     #self.cs = CellaservProxy()
     #     #self.match_color = self.cs.match.get_color()
-    #     self.proj_positions = None
-    #     self.girouette_c = None
+        self.proj_positions = None
+        self.girouette_c = None
 
     @Service.action("setup")
     def setup_match_vision(self, team_color='yellow'):
         self.ortho_proj, self.opponent_ids = setup_for_match(team_color)
         return "vision setup: ok"
+
+    @Service.action
+    def get_opp(self):
+        return self.opponent_ids.__str__()
+
 
     @Service.action
     def girouette_color(self, img, team_color):
