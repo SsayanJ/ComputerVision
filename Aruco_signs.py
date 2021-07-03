@@ -7,8 +7,8 @@ import numpy as np
 CENTRAL_POSITION = [1500, 2000]
 YELLOW_OFFSET = [-10, 0]
 BLUE_OFFSET = [10, 0]
-CAMERA_HEIGHT = 1200
-BALISE_HEIGHT = 510
+CAMERA_HEIGHT = 1000
+BALISE_HEIGHT = 420
 
 COLOR = (255, 0, 0)
 aruco_signs_legend = {1: "bleu", 2: "bleu", 3: "bleu", 4: "bleu", 5: "bleu",
@@ -68,15 +68,15 @@ yellow_out_points = np.float32([[600, 500],
 
 # Values for camera on BLUE side:
 # TODO need to be defined (currently using YELLOW values)
-blue_in_points = np.float32([[269, 77],
-                             [1168, 178],
-                             [1089, 560],
-                             [159, 438]])
+blue_in_points = np.float32([[358, 68],
+                               [199, 465],
+                               [1266, 447],
+                               [1064, 39]])
 
-blue_out_points = np.float32([[400, 800],
-                              [2500, 800],
-                              [2100, 1700],
-                              [600, 1700]])
+blue_out_points = np.float32([[600, 500],
+                                [600, 1600],
+                                [2400, 1600],
+                                [2400, 500]])
 
 
 # Function that takes a fisheye picture, undistort and project it in an orthornaml system (view from the top)
@@ -204,7 +204,7 @@ def pol2cart(rho, phi):
 def proj_pos(object_pos, object_h):
     coord_camera_space = coordinates_board2camera(object_pos)
     r, theta = cart2pol(coord_camera_space)
-    proj_r = r * object_h / CAMERA_HEIGHT
+    proj_r = r * (CAMERA_HEIGHT - object_h) / CAMERA_HEIGHT
     proj_vec = pol2cart(proj_r, theta)
     proj_position = coordinates_camera2board(proj_vec)
     return proj_position
