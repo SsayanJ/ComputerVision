@@ -100,10 +100,10 @@ def setup_for_match(team_color):
 def undistort_and_project_image(fisheye_image, ortho_proj):
     processed_img = cv.remap(
         fisheye_image, map1, map2, interpolation=cv.INTER_LINEAR, borderMode=cv.BORDER_CONSTANT)
-    cv.imwrite('undistorted_yellow/verres_undist2_28.png', processed_img)
+#     cv.imwrite('undistorted_yellow/verres_undist2_28.png', processed_img)
     processed_img = cv.warpPerspective(
         processed_img, ortho_proj, (3000, 2000), flags=cv.INTER_LINEAR)
-    cv.imwrite('undistorted_yellow/verres_warp2_28.png', processed_img)
+#     cv.imwrite('undistorted_yellow/verres_warp2_28.png', processed_img)
     return processed_img
 
 
