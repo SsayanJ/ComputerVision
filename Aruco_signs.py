@@ -41,20 +41,31 @@ map1, map2 = cv.fisheye.initUndistortRectifyMap(
 #                                [1168, 178],
 #                                [1089, 560],
 #                                [159, 438]])
-# 
+#
 # yellow_out_points = np.float32([[400, 800],
 #                                 [2500, 800],
 #                                 [2100, 1700],
 #                                 [600, 1700]])
-yellow_in_points = np.float32([[232, 534],
-                               [1065, 353],
-                               [1100, 43],
-                               [306, 4]])
+# 2nd July
+# yellow_in_points = np.float32([[232, 534],
+#                                [1065, 353],
+#                                [1100, 43],
+#                                [306, 4]])
 
-yellow_out_points = np.float32([[700, 1700],
-                                [2000, 1400],
-                                [2500, 500],
-                                [500, 600]])
+# yellow_out_points = np.float32([[700, 1700],
+#                                 [2000, 1400],
+#                                 [2500, 500],
+#                                 [500, 600]])
+yellow_in_points = np.float32([[358, 68],
+                               [199, 465],
+                               [1266, 447],
+                               [1064, 39]])
+
+yellow_out_points = np.float32([[600, 500],
+                                [600, 1600],
+                                [2400, 1600],
+                                [2400, 500]])
+
 # Values for camera on BLUE side:
 # TODO need to be defined (currently using YELLOW values)
 blue_in_points = np.float32([[269, 77],
@@ -86,13 +97,13 @@ def setup_for_match(team_color):
     return ortho_proj, opponents_ids
 
 
-def undistort_and_project_image(fisheye_image):
+def undistort_and_project_image(fisheye_image, ortho_proj):
     processed_img = cv.remap(
         fisheye_image, map1, map2, interpolation=cv.INTER_LINEAR, borderMode=cv.BORDER_CONSTANT)
-    cv.imwrite('undistorted_yellow/verres_undist2_28.png',processed_img)
+    cv.imwrite('undistorted_yellow/verres_undist2_28.png', processed_img)
     processed_img = cv.warpPerspective(
-        processed_img, ORTHO_PROJ, (3000, 2000), flags=cv.INTER_LINEAR)
-    cv.imwrite('undistorted_yellow/verres_warp2_28.png',processed_img)
+        processed_img, ortho_proj, (3000, 2000), flags=cv.INTER_LINEAR)
+    cv.imwrite('undistorted_yellow/verres_warp2_28.png', processed_img)
     return processed_img
 
 
@@ -117,10 +128,10 @@ def get_team_positions():
     pass
 
 
-def return_opponent_positions(fisheye_image):
-    processed_image = undistort_and_project_image(fisheye_image)
+def return_opponent_positions(fisheye_image, ortho_proj, opponent_ids):
+    processed_image = undistort_and_project_image(fisheye_image, ortho_proj)
     img_with_markers, corners, ids = get_arucos(processed_image)
-    opponent_positions = []
+    opponent_positions, opp_ids_list = [], []
     for i, val in enumerate(corners):
         try:
             sign = aruco_signs_legend[int(ids[i])]
@@ -131,15 +142,16 @@ def return_opponent_positions(fisheye_image):
             center_x, center_y = (DR_x+UL_x)//2, (DR_y+UL_y)//2
             cv.putText(img_with_markers, sign, (UL_x, UL_y-5),
                        cv.FONT_HERSHEY_SIMPLEX, 1.5, COLOR, 6)
-            if ids[i] in OPPONENT_IDS:
-                opponent_positions.append([ids[i][0], [center_x, center_y]])
+            if ids[i] in opponent_ids:
+                opp_ids_list.append(ids[i][0])
+                opponent_positions.append([center_x, center_y])
 
         except KeyError:
             continue
     cv.imshow('treated Image', scale_pic(img_with_markers))
     cv.imwrite('out/warp_yellow.jpg', img_with_markers)
     cv.waitKey(0)
-    return opponent_positions
+    return opp_ids_list, np.array(opponent_positions)
 
 # this function may not be needed in production except if we want to return the image for live streaming
 
@@ -174,7 +186,7 @@ def coordinates_camera2board(coordinates):
 def cart2pol(position):
     rho = np.linalg.norm(position)
     phi = np.arctan2(position[1], position[0])
-    return np.array([rho, phi])
+    return np.array([rho, phi], dtype='object')
 
 # Function to transform polar coordinates in cartesian coordinates
 
@@ -198,157 +210,86 @@ def proj_pos(object_pos, object_h):
     return proj_position
 
 
+def record_match(match_duration=100):
+    # Define the duration (in seconds) of the video capture here
+    capture_duration = match_duration
+    cap = cv.VideoCapture(0, cv.CAP_DSHOW)
+    # cap.set(cv.CAP_PROP_FRAME_WIDTH, DIM[0])
+    # cap.set(cv.CAP_PROP_FRAME_HEIGHT, DIM[1])
+    # cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
+    # cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
+
+    ts = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+    # w = cap.get(cv.CAP_PROP_FRAME_WIDTH)
+    # h = cap.get(cv.CAP_PROP_FRAME_HEIGHT)
+    fourcc = cv.VideoWriter_fourcc(*'mp4v')
+    video_title = f'{ts}_match.mp4'
+    out = cv.VideoWriter(video_title, fourcc, 20.0, (640, 480))
+
+    # Define the codec and create VideoWriter object
+    # fourcc = cv.VideoWriter_fourcc(*'XVID')
+    # video_title = f'{ts}_match.avi'
+    # # out = cv.VideoWriter(f'{ts}_match.avi', fourcc, 20.0, DIM)
+    # out = cv.VideoWriter(video_title, fourcc, 20.0, (640, 480))
+
+    start_time = time.time()
+    while(int(time.time() - start_time) < capture_duration):
+        ret, frame = cap.read()
+        if ret == True:
+            # frame = cv.flip(frame,0)
+
+            # write the flipped frame
+            out.write(frame)
+
+            cv.imshow('frame', frame)
+            # if cv.waitKey(1) & 0xFF == ord('q'):
+            #    break
+        else:
+            break
+
+    # Release everything if job is finished
+    cap.release()
+    out.release()
+    cv.destroyAllWindows()
+
+
+GIROUETTE_YELLOW = np.array([768, 784, 679, 695])
+
+# Output: 0 means Black, 1 means White
+
+
+def girouette(fisheye_img, team_color):
+    if team_color == "yellow":
+        test_img = fisheye_img[GIROUETTE_YELLOW[2]: GIROUETTE_YELLOW[3],
+                               GIROUETTE_YELLOW[0]: GIROUETTE_YELLOW[1]]
+        # test_img = fisheye_img[600:700,
+        #                        700:900]
+        cv.imshow('test_selection', test_img)
+        cv.waitKey(0)
+    else:
+        print('ERROR not configured')
+        return "add blue coordinates"
+    print(test_img.mean())
+    if test_img.mean() < 50:
+        girouette_color = 0
+    else:
+        girouette_color = 1
+    return girouette_color
+
+
 if __name__ == "__main__":
     ###### MATCH SETUP ####
     ORTHO_PROJ, OPPONENT_IDS = setup_for_match("yellow")
 
-    # GENERAL SETUP, TO BE KEPT FOR EACH OPTIONS:    ##############""
-
     # SINGLE IMAGE: Load image to check for single image mode, just uncomment the next 2 paragraphs to use on single image
     img = cv.imread('Robot_signs/Full_board1.PNG')
-
     img6 = cv.imread("coordinates/Blue_2000_1300.png")
     img7 = cv.imread("updated_pos/board_img_1.png")
-    img6 = cv.imread("coordinates/balise gauche jaune/verres_config2_28.png")
+    img6 = cv.imread("small_yellow/verres_config1_10.png")
 
-    # for i in range(1,6):
-    #     curr_img = cv.imread(f"angle_selection/trait_{i}.png")
-    # #     img2 = cv.imread(f"test_pics/prev/board_img_{i}.png")
-    #     curr_img = cv.remap(curr_img, map1, map2, interpolation=cv.INTER_LINEAR, borderMode=cv.BORDER_CONSTANT)
-    # #     img2 = cv.remap(img2, map1, map2, interpolation=cv.INTER_LINEAR, borderMode=cv.BORDER_CONSTANT)
-    #     cv.imwrite(f'angle_selection/undistort_trait_{i}.jpg', curr_img)
-    #     cv.imwrite(f'train/result_1{i}.jpg', img2)
-    #
     curr_img = img6
-    # cv.imshow('Result', curr_img)
     positions = return_opponent_positions(curr_img)
     print(positions)
-    proj_positions = proj_pos(positions[0][1], BALISE_HEIGHT)
-    print(proj_positions)
-
-    # Code to check on a single image
-    # curr_img = cv.remap(curr_img, map1, map2,
-    #                     interpolation=cv.INTER_LINEAR, borderMode=cv.BORDER_CONSTANT)
-    # corners, ids, rejected = aruco.detectMarkers(
-    #     curr_img, ARUCO_DICT, parameters=aruco_Params)
-    # curr_img = cv.aruco.drawDetectedMarkers(curr_img, corners, ids)
-
-    # # init_Lsupport = np.float32([[286, 77],
-    # #             [896, 79],
-    # #             [1111, 445],
-    # #             [272, 511]])
-    # #
-    # # out_Lsupport = np.float32([[400, 900],
-    # #             [1900, 900],
-    # #             [2100, 1700],
-    # #             [800, 1800]])
-
-    # # ortho_proj = cv.getPerspectiveTransform(corners_42, coord_42)
-    # ortho_proj = cv.getPerspectiveTransform(init_points, out_points)
-    # out = cv.warpPerspective(curr_img, ortho_proj,
-    #                          (3000, 2000), flags=cv.INTER_LINEAR)
-    # cv.imwrite('out/Warp_Lsupport.jpeg', out)
-    # cv.imwrite('out/Undistor_Lsupport.jpeg', curr_img)
-    # out = scale_pic(out, 40)
-    # for i, val in enumerate(corners):
-    #     try:
-    #         sign = aruco_signs_legend[int(ids[i])]
-    #         id_min = val[0].sum(axis=1).argmin()
-    #         id_max = val[0].sum(axis=1).argmax()
-    #         UL_x, UL_y = int(val[0][id_min][0]), int(val[0][id_min][1])
-    #         DR_x, DR_y = int(val[0][id_max][0]), int(val[0][id_max][1])
-    #         center_x, center_y = (DR_x+UL_x)//2, (DR_y+UL_y)//2
-    #         cv.rectangle(curr_img, (UL_x, UL_y), (DR_x, DR_y), COLOR, 3)
-    #         cv.putText(curr_img, sign, (UL_x, UL_y-5),
-    #                    cv.FONT_HERSHEY_COMPLEX_SMALL, 1, COLOR, 2)
-    # #         cv.circle(curr_img,(center_x,center_y), 2, (0,255,255), -1)
-    #     except KeyError:
-    #         continue
-    # curr_img = scale_pic(curr_img, 50)
-    # cv.imshow('Result', curr_img)
-    # cv.imshow('warp', out)
-    # cv.waitKey(0)
-
-    # FROM WEBCAM STREAM
-
-    # cap = cv.VideoCapture(0)
-    # cap.set(cv.CAP_PROP_FRAME_WIDTH,DIM[0])
-    # cap.set(cv.CAP_PROP_FRAME_HEIGHT,DIM[1])
-    #
-    # # Define the codec and create VideoWriter object
-    # fourcc = cv.VideoWriter_fourcc(*'XVID')
-    # out = cv.VideoWriter('POC_Signs_reco.avi',fourcc, 20.0, (640,480))
-    #
-    # while True:
-    #
-    #     # GET CAMERA IMAGE
-    #     success, img = cap.read()
-    #     # DISPLAY THE DETECTED OBJECTS
-    #     corners, ids , rejected= aruco.detectMarkers(img,ARUCO_DICT,parameters=aruco_Params)
-    #     aruco.drawDetectedMarkers(img,corners)
-    #     for i,val in enumerate(corners):
-    #         try:
-    #             curr_id=int(ids[i])
-    #             if curr_id in aruco_signs_legend:
-    #                 sign=aruco_signs_legend[int(ids[i])]
-    #             else:
-    #                 sign=str(curr_id)
-    #             id_min=val[0].sum(axis=1).argmin()
-    #             id_max=val[0].sum(axis=1).argmax()
-    #             UL_x,UL_y=int(val[0][id_min][0]),int(val[0][id_min][1])
-    #             DR_x,DR_y=int(val[0][id_max][0]),int(val[0][id_max][1])
-    #             center_x,center_y=(DR_x+UL_x)//2,(DR_y+UL_y)//2
-    # #             cv.rectangle(img,(UL_x,UL_y),(DR_x,DR_y),COLOR,2)
-    #             cv.putText(img,sign,(UL_x,UL_y-5),cv.FONT_HERSHEY_COMPLEX_SMALL,1,COLOR,2)
-    # #             cv.circle(img,(center_x,center_y), 2, (0,255,255), -1)
-    #         except KeyError:
-    #             continue
-    #
-    #     cv.imshow("Result", img)
-    #     dst=cv.remap(img, map1, map2, interpolation=cv.INTER_LINEAR, borderMode=cv.BORDER_CONSTANT)
-    # #     out.write(img)
-    #     cv.imshow("Straightened image", dst)
-    #
-    # #     if cv.waitKey(1) and 0xFF == ord("p"):
-    # #         print("A")
-    # #         cv.imwrite("angle_selection/original_img", img)
-    # #         cv.imwrite("angle_selection/undistorted_img", dst)
-    #
-    #     if cv.waitKey(1) & 0xFF == ord('q'):
-    #         print("A")
-    #         break
-
-    # from sample video
-
-    # cap = cv.VideoCapture('CDF_sample.mp4')
-    # speed=25
-    #
-    # while (cap.isOpened()):
-    #
-    #     # GET CAMERA IMAGE
-    #     success, img = cap.read()
-    #
-    #     # DISPLAY THE DETECTED OBJECTS
-    #     corners, ids , rejected= aruco.detectMarkers(img,ARUCO_DICT,parameters=aruco_Params)
-    #     for i,val in enumerate(corners):
-    #         try:
-    #             sign=aruco_signs_legend[int(ids[i])]
-    #             id_min=val[0].sum(axis=1).argmin()
-    #             id_max=val[0].sum(axis=1).argmax()
-    #             UL_x,UL_y=int(val[0][id_min][0]),int(val[0][id_min][1])
-    #             DR_x,DR_y=int(val[0][id_max][0]),int(val[0][id_max][1])
-    #             center_x,center_y=(DR_x+UL_x)//2,(DR_y+UL_y)//2
-    #             cv.rectangle(img,(UL_x,UL_y),(DR_x,DR_y),color,3)
-    #             cv.putText(img,sign,(UL_x,UL_y-5),cv.FONT_HERSHEY_COMPLEX_SMALL,1,color,2)
-    #             cv.circle(img,(center_x,center_y), 3, (0,255,255), -1)
-    #         except KeyError:
-    #             continue
-    #
-    #
-    #
-    #     cv.imshow("Result", img)
-    #
-    #     if cv.waitKey(speed) & 0xFF == ord('q'):
-    #          break
-    # cap.release()
-    # cv.destroyAllWindows()
+    if positions:
+        proj_positions = proj_pos(positions[0][1], BALISE_HEIGHT)
+        print(proj_positions)
