@@ -10,7 +10,6 @@ The project is not yet finalised.
 - Camera objective replaced by a fisheye with 160° angle
 
 ## Main tasks
-- Calibrate fisheye camera to straighten images (done)
-- Project image on an coordinate system to identify position in X,Y on the table (to do)
-- Recognize robot Aruco signs and return position (done)
-- Detect red and green plastic cups to return position on the table (ongoing)
+- Calibrate fisheye camera to straighten images
+- Project image on an coordinate system to identify position in X,Y on the table
+- Recognize robot Aruco signs and return position
